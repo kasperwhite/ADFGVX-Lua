@@ -1,4 +1,4 @@
-parse = require("parse")
+parse = require("modules.parse")
 
 local crypto = {}
 -- функция, возвращающая таблицу замен
