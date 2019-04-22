@@ -15,8 +15,8 @@ local operation = arg[1]
 if (string.len(adf) ^ 2) > string.len(alphabet) then
     -- операция отсутствует (справка)
     if operation == nil then
-        print("For encrypt type:\n      enc <filepath> <password path> <mode> <table path> <outputpath(optional)>")
-        print("For decrypt type:\n      dec <filepath> <password path> <mode> <table path> <outputpath(optional)>")
+        print("For encrypt type:\n      enc <filepath> <password path> <mode> [table path] [outputpath]")
+        print("For decrypt type:\n      dec <filepath> <password path> <mode> <table path> [outputpath]")
         print("Available modes:\n       For random fill type: rand\n       For password fill type: pass")
     -- операция шифрования
     elseif operation == "enc" then
