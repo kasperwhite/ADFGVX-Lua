@@ -1,33 +1,61 @@
 parse = require("modules.parse")
+wwf = require("modules.wwf")
 
 local crypto = {}
 -- функция, возвращающая таблицу замен
-function crypto.getReplaceTable(adf, alphabet ,pass)
-    stlb = adf
-    tab = {}
-    count = 1
-    alphArr = parse.stringToTab(alphabet)
-    --удаление повторяющихся символов в алфавите
-    newAlphArr = {}
-    for i = 1, #alphArr do
-        if string.find(pass, alphArr[i]) == nil then
-            table.insert(newAlphArr, #newAlphArr + 1, alphArr[i])
-        end
-    end
-    newAlph = pass .. parse.tabToString(newAlphArr)
-    --составляем матрицу замен
-    for i = 1, string.len(stlb) do
-        table.insert( tab, #tab + 1, {})
-        for j = 1, string.len(stlb) do
-            if count > string.len(newAlph) then
-                break
-            else
-                tab[i][j] = string.sub(newAlph, count, count)
+function crypto.getReplaceTable(adf, alphabet, mode, pass, tabpath)
+    if mode == "pass" then
+        stlb = adf
+        tab = {}
+        count = 1
+        alphArr = parse.stringToTab(alphabet)
+        --удаление повторяющихся символов в алфавите
+        newAlphArr = {}
+        for i = 1, #alphArr do
+            if string.find(pass, alphArr[i]) == nil then
+                table.insert(newAlphArr, #newAlphArr + 1, alphArr[i])
             end
-            count = count + 1 
         end
+        newAlph = pass .. parse.tabToString(newAlphArr)
+        --составляем матрицу замен основанную на пароле
+        for i = 1, string.len(stlb) do
+            table.insert( tab, #tab + 1, {})
+            for j = 1, string.len(stlb) do
+                if count > string.len(newAlph) then
+                    break
+                else
+                    tab[i][j] = string.sub(newAlph, count, count)
+                end
+                count = count + 1 
+            end
+        end
+
+        return tab
+    elseif mode == "rand" then
+        met = 1
+        math.randomseed(os.time())
+        math.random() math.random() math.random()
+        alphArr = parse.stringToTab(alphabet)
+        ranTab = {}
+        for i = 1, string.len(adf) do
+            table.insert(ranTab, #ranTab + 1, {})
+            for j = 1, string.len(adf) do
+                if met > string.len(alphabet) then
+                    break
+                else
+                    ranNumb = math.random(1, #alphArr)
+                    ranTab[i][j] = alphArr[ranNumb]
+                    table.remove(alphArr, ranNumb)
+                end
+                met = met + 1
+            end
+            wwf.write(tabpath, parse.tabToString(ranTab[i]))
+        end
+
+        return ranTab
+    else 
+        print("Unknown mode")
     end
-    return tab
 end
 -- функция, возвращающая замененные буквы
 function crypto.replaceChar(adf, tab, str)
@@ -75,15 +103,15 @@ function crypto.getPermTable(adf, pass, str)
     return message
 end
 -- главная функция шифрования 
-function crypto.encrypt(adf, alphabet, pass, mess)
-    repTab = crypto.getReplaceTable(adf, alphabet, pass)
+function crypto.encrypt(adf, alphabet, mode, pass, tabpath, mess)
+    repTab = crypto.getReplaceTable(adf, alphabet, mode, pass, tabpath)
     replaceChars = crypto.replaceChar(adf, repTab, mess)
     ciph = crypto.getPermTable(adf, pass, replaceChars)
 
     return ciph
 end
 
-function crypto.decrypt(adf, alphabet, pass, ciph)
+function crypto.decrypt(adf, alphabet, mode, pass, tabpath, ciph)
     mostLong = string.len(ciph) % string.len(pass)
     normLen = math.floor(string.len(ciph) / string.len(pass))
 
@@ -130,7 +158,15 @@ function crypto.decrypt(adf, alphabet, pass, ciph)
         end
     end
     -- расшифровка криптограммы в соответствии с таблицей замен
-    repTab = crypto.getReplaceTable(adf, alphabet, pass)
+    local repTab = {}
+    if mode == "pass" then
+        repTab = crypto.getReplaceTable(adf, alphabet, mode, pass, tabpath)
+    elseif mode == "rand" then
+        repTab = parse.stringToMatrix(wwf.read(tabpath), string.len(adf))
+    else
+        print("Unknown mode")
+    end
+
     cryptMes = ""
     for i = 1, #cryptArr, 2 do
         cryptMes = cryptMes .. repTab[string.find(adf, cryptArr[i])][string.find(adf, cryptArr[i+1])]
